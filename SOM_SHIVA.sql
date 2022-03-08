@@ -20,7 +20,7 @@ FROM v$option;
 SELECT *
 FROM v$thread;
 ALTER
-SYSTEM KILL SESSION 'SID,SERIAL#'
+    SYSTEM KILL SESSION 'SID,SERIAL#'
 SELECT SYS.dbms_metadata.get_ddl('TABLE', 'EMP_PART')
 FROM dual;
 ALTER TABLE PRINCE.emp_fake
@@ -38,7 +38,7 @@ ALTER TABLE PRINCE.emp_fake
 PURGE TABLE A;
 DESC USER_RECYCLEBIN;
 FLASHBACK
-TABLE A TO BEFORE DROP;
+    TABLE A TO BEFORE DROP;
 
 --* FETCH
 SELECT*
@@ -53,7 +53,8 @@ OFFSET 0 ROWS FETCH NEXT 3 ROWS ONLY;
 
 ---* OFFSET B
 SELECT *
-FROM employees OFFSET (SELECT COUNT(*) FROM employees) - 3 ROW FETCH FIRST 3 ROW ONLY;
+FROM employees
+OFFSET (SELECT COUNT(*) FROM employees) - 3 ROW FETCH FIRST 3 ROW ONLY;
 
 
 --* NOTE : AND operator returns value FROM single ROW
@@ -315,7 +316,8 @@ SELECT 9 "", '' "»"
 FROM dual;
 ----------------------* except CAPITAL ( Alphabets + special Alphabets)  all comes under limitation.
 
-===* Column names with spaces.
+===* Column names
+with spaces.
 SELECT '1 '
 FROM dual; ---> due to space [ "' '" ]--> Double quotes cancels out.
 SELECT ' 1 '
@@ -565,13 +567,13 @@ WHERE salary =
                                     AND C.max_sal))
 
 -- same method /but lengthy approach.
-    WITH CTE AS (
+WITH CTE AS (
     SELECT*
     FROM employeex A,
          department B
 
-WHERE A.dep_id = B.dep_id
-AND B.dep_location = 'PERTH'
+    WHERE A.dep_id = B.dep_id
+      AND B.dep_location = 'PERTH'
 )
 ----* with clause will throw error if column not defined
 ---* WHY ?.. because of alias A,B
@@ -1036,7 +1038,8 @@ FROM CTE A
 ---*alternative sol^n
 WITH CTE AS (
     SELECT A.*,
-           ROW_NUMBER() OVER (ORDER BY ROWNUM ) AS RN, ROW_NUMBER() OVER (ORDER BY A.val)   AS RN1
+           ROW_NUMBER() OVER (ORDER BY ROWNUM ) AS RN,
+           ROW_NUMBER() OVER (ORDER BY A.val)   AS RN1
     FROM A_emp A)
 SELECT A.val, B.val
 FROM CTE B,
@@ -1238,7 +1241,7 @@ SELECT D1.*, E1.*
 FROM employeex E1,
      (SELECT D.dep_id, COUNT(E.emp_id) AS count
       FROM employeex E,
-          department D
+           department D
       WHERE D.dep_id = E.dep_id(+)
       GROUP BY D.dep_id) D1
 WHERE D1.dep_id = E1.dep_id(+)
@@ -1791,12 +1794,12 @@ SELECT dep_id,
         GROUP BY dep_id) AS count
 FROM department Y
 WHERE Y.dep_id = (SELECT dep_id
-    FROM employeex
-    GROUP BY dep_id
-    HAVING COUNT (emp_id) = (SELECT MAX (COUNT (emp_id))
-    FROM employeex
-    GROUP BY dep_id)
-    );
+                  FROM employeex
+                  GROUP BY dep_id
+                  HAVING COUNT(emp_id) = (SELECT MAX(COUNT(emp_id))
+                                          FROM employeex
+                                          GROUP BY dep_id)
+);
 
 --*master method
 SELECT B.dep_id,
@@ -1909,12 +1912,11 @@ WHERE salary BETWEEN min_sal AND max_sal
                 WHERE A.dep_id = B.dep_id
                   AND dep_location = 'PERTH'
                   AND manager_id
-    != (SELECT emp_id
-    FROM employeex
-    WHERE emp_name = 'KAYLING')
-  AND job_name = ANY ('SALESMAN'
-    , 'MANAGER')
-    );
+                    != (SELECT emp_id
+                        FROM employeex
+                        WHERE emp_name = 'KAYLING')
+                  AND job_name = ANY ('SALESMAN', 'MANAGER')
+);
 
 --* master method
 SELECT *
@@ -1961,9 +1963,9 @@ WHERE emp_id = ANY (SELECT emp_id
                                 WHERE dep_location = 'PERTH')
                   AND job_name IN ('SALESMAN', 'MANAGER')
                   AND manager_id
-    != (SELECT emp_id
-    FROM employeex
-    WHERE emp_name = 'KAYLING'));
+                    != (SELECT emp_id
+                        FROM employeex
+                        WHERE emp_name = 'KAYLING'));
 
 
 56--* emp senior to recently hired emp works under KAYLING
@@ -2205,9 +2207,9 @@ ANS
 --* D = 1->7
 SELECT TO_CHAR(SYSDATE, 'MON') AS Month, COUNT(cal) AS SAT_SUN_count
 FROM (
-    SELECT TO_CHAR(LEVEL - 1 + TRUNC(SYSDATE, 'Mon'), 'DY') AS cal
-    FROM dual
-    CONNECT BY LEVEL <= ROUND(LAST_DAY(SYSDATE) - TRUNC(SYSDATE, 'Mon')) + 1)
+         SELECT TO_CHAR(LEVEL - 1 + TRUNC(SYSDATE, 'Mon'), 'DY') AS cal
+         FROM dual
+         CONNECT BY LEVEL <= ROUND(LAST_DAY(SYSDATE) - TRUNC(SYSDATE, 'Mon')) + 1)
 WHERE cal IN ('SAT', 'SUN');
 
 
@@ -2215,8 +2217,8 @@ WHERE cal IN ('SAT', 'SUN');
 WITH CTE AS
          (SELECT TO_CHAR((LEVEL - 1) + TRUNC(SYSDATE, 'Month'), 'DY') AS cal
           FROM dual
-CONNECT BY LEVEL <= TRUNC(LAST_DAY(SYSDATE) - TRUNC(SYSDATE)) + 1
-    )
+          CONNECT BY LEVEL <= TRUNC(LAST_DAY(SYSDATE) - TRUNC(SYSDATE)) + 1
+         )
 SELECT cal, COUNT(cal)
 FROM CTE
 WHERE cal IN ('SAT', 'SUN')
@@ -2280,31 +2282,32 @@ FROM (
                                       TO_CHAR(LEVEL - 1 + TRUNC(TO_DATE('1990-11-12', 'YYYY-MM-DD'), 'YYYY'),
                                               'DY')    AS Days
                                FROM dual ---* with trunc over here u can get the sat-sun count for dec
-                           CONNECT BY LEVEL <= LAST_DAY(TO_DATE('2050-12-12'
-                                    , 'YYYY-MM-DD'))
-                               - TRUNC(TO_DATE('1990-11-22'
-                                    , 'YYYY-MM-DD')
-                                    , 'YYYY')
-                       ) SELECT years, Months, COUNT(days) AS SAT_SUN_COUNT
-                  FROM CTE
-                  WHERE days IN ('SAT', 'SUN')
-                  GROUP BY ROLLUP (Years, Months)
-                  ORDER BY years,
-                      (CASE
-                      WHEN Months = 'January  ' THEN 1
-                      WHEN Months = 'February ' THEN 2
-                      WHEN Months = 'March    ' THEN 3
-                      WHEN Months = 'April    ' THEN 4
-                      WHEN Months = 'May      ' THEN 5
-                      WHEN Months = 'June     ' THEN 6
-                      WHEN Months = 'July     ' THEN 7
-                      WHEN Months = 'August   ' THEN 8
-                      WHEN Months = 'September' THEN 9
-                      WHEN Months = 'October  ' THEN 10
-                      WHEN Months = 'November ' THEN 11
-                      WHEN Months = 'December ' THEN 12
-                      ELSE null
-                      END))) );
+                               CONNECT BY LEVEL <= LAST_DAY(TO_DATE('2050-12-12'
+                                   , 'YYYY-MM-DD'))
+                                   - TRUNC(TO_DATE('1990-11-22'
+                                               , 'YYYY-MM-DD')
+                                                       , 'YYYY')
+                           )
+                           SELECT years, Months, COUNT(days) AS SAT_SUN_COUNT
+                           FROM CTE
+                           WHERE days IN ('SAT', 'SUN')
+                           GROUP BY ROLLUP (Years, Months)
+                           ORDER BY years,
+                                    (CASE
+                                         WHEN Months = 'January  ' THEN 1
+                                         WHEN Months = 'February ' THEN 2
+                                         WHEN Months = 'March    ' THEN 3
+                                         WHEN Months = 'April    ' THEN 4
+                                         WHEN Months = 'May      ' THEN 5
+                                         WHEN Months = 'June     ' THEN 6
+                                         WHEN Months = 'July     ' THEN 7
+                                         WHEN Months = 'August   ' THEN 8
+                                         WHEN Months = 'September' THEN 9
+                                         WHEN Months = 'October  ' THEN 10
+                                         WHEN Months = 'November ' THEN 11
+                                         WHEN Months = 'December ' THEN 12
+                                         ELSE null
+                                        END))));
 
 
 ---* Master Method:
@@ -2329,7 +2332,8 @@ FROM (
                                   TO_CHAR(LEVEL - 1 + TRUNC(TO_DATE('1990-10-12', 'YYYY-MM-DD'), 'YYYY'),
                                           'MONTH')                                                                Months,
                                   TO_CHAR(LEVEL - 1 + TRUNC(TO_DATE('1990-10-12', 'YYYY-MM-DD'), 'YYYY'), 'DY')   days
-                           FROM dual CONNECT BY LEVEL <=
+                           FROM dual
+                           CONNECT BY LEVEL <=
                                       (LAST_DAY(TO_DATE('2050-12-30', 'YYYY-MM-DD')) TRUNC(TO_DATE('1990-10-12', 'YYYY-MM-DD'), 'YYYY')))
                   WHERE days IN ('SAT', 'SUN')
                   GROUP BY ROLLUP (years, months)
@@ -2354,33 +2358,33 @@ FROM (
 75--* Display calender Of current Month
 SELECT DAYS, LISTAGG(TO_CHAR(MONTH_DATES), ' ') WITHIN GROUP (ORDER BY MONTH_DATES) AS THIS_MONTH
 FROM (
-    SELECT TO_CHAR(LEVEL - 1 + TRUNC(SYSDATE, 'MON'), 'DAY') AS DAYS, LEVEL AS MONTH_DATES
-    FROM dual
-    CONNECT BY LEVEL <= LAST_DAY(SYSDATE)
-    - TRUNC(SYSDATE, 'MON') + 1)
+         SELECT TO_CHAR(LEVEL - 1 + TRUNC(SYSDATE, 'MON'), 'DAY') AS DAYS, LEVEL AS MONTH_DATES
+         FROM dual
+         CONNECT BY LEVEL <= LAST_DAY(SYSDATE)
+                                 - TRUNC(SYSDATE, 'MON') + 1)
 GROUP BY DAYS;
 
 --* Master method
 SELECT DAYS, LISTAGG(TO_CHAR(MONTH_DATES, 'DD'), ' ') WITHIN GROUP (ORDER BY MONTH_DATES) AS DATES
 FROM (
-    SELECT MONTH_DATES, TO_CHAR(MONTH_DATES, 'DAY') AS DAYS
-    FROM (
-    SELECT ADD_MONTHS(LAST_DAY(SYSDATE), -1) + LEVEL AS MONTH_DATES
-    FROM dual
-    CONNECT BY LEVEL <= TO_CHAR(LAST_DAY(SYSDATE), 'DD'))
-    )
+         SELECT MONTH_DATES, TO_CHAR(MONTH_DATES, 'DAY') AS DAYS
+         FROM (
+                  SELECT ADD_MONTHS(LAST_DAY(SYSDATE), -1) + LEVEL AS MONTH_DATES
+                  FROM dual
+                  CONNECT BY LEVEL <= TO_CHAR(LAST_DAY(SYSDATE), 'DD'))
+     )
 GROUP BY DAYS;
 
 ---* Another Method :
 SELECT DISTINCT Days, LISTAGG(L, ' ') WITHIN GROUP (ORDER BY L) OVER ( PARTITION BY days ) AS Calender
 FROM (
-    SELECT TO_CHAR(LEVEL - 1 + TRUNC(SYSDATE, 'MONTH'), 'DAY') AS days, Level L
-    FROM dual
-    CONNECT BY LEVEL <= ADD_MONTHS(TRUNC(SYSDATE, 'MONTH'), 1) - 1 - TRUNC(SYSDATE, 'MONTH') + 1)
+         SELECT TO_CHAR(LEVEL - 1 + TRUNC(SYSDATE, 'MONTH'), 'DAY') AS days, Level L
+         FROM dual
+         CONNECT BY LEVEL <= ADD_MONTHS(TRUNC(SYSDATE, 'MONTH'), 1) - 1 - TRUNC(SYSDATE, 'MONTH') + 1)
 
 
 --* Date into Words. *--
-SELECT TO_CHAR(SYSDATE, 'YEAR MONTH DAY')
+         SELECT TO_CHAR(SYSDATE, 'YEAR MONTH DAY')
 FROM dual;
 SELECT TO_CHAR(TO_DATE(emp_id, 'J'), 'JSP')
 FROM employeex;
@@ -2400,7 +2404,8 @@ SELECT SUBSTR(S, LEVEL)                        A1,
        SUBSTR(S, LEVEL, LENGTH(S) + 1 - LEVEL) A3,
        SUBSTR(S, 1, LENGTH(S) + 1 - LEVEL)     A4,
        RPAD(S, LENGTH(S) + 1 - LEVEL)          A5
-FROM CTE CONNECT BY LEVEL <= LENGTH(S);
+FROM CTE
+CONNECT BY LEVEL <= LENGTH(S);
 
 
 --* BASICS STEPs PAttern [ - ve CUT RIGHT ]
@@ -2410,7 +2415,8 @@ SELECT RPAD(' ', LEVEL) || SUBSTR(S, LEVEL)                        A1,
        RPAD(' ', LEVEL) || SUBSTR(S, 1, LENGTH(S) + 1 - LEVEL)     A3,
        RPAD(' ', LEVEL) || SUBSTR(S, LEVEL, LENGTH(S) + 1 - LEVEL) A4,
        RPAD(' ', LEVEL) || RPAD(S, LENGTH(S) + 1 - LEVEL)          A5
-FROM CTE CONNECT BY LEVEL <= LENGTH(S);
+FROM CTE
+CONNECT BY LEVEL <= LENGTH(S);
 
 
 --* BASICS STEPs PAttern [ - ve CUT left DESC]
@@ -2419,7 +2425,8 @@ SELECT RPAD(S, LEVEL, S)                       A1,
        SUBSTR(S, 1, LEVEL)                     A2,
        SUBSTR(S, -LEVEL, LEVEL)                A3,
        SUBSTR(S, LENGTH(S) + 1 - LEVEL, LEVEL) A4
-FROM CTE CONNECT BY LEVEL <= LENGTH(S);
+FROM CTE
+CONNECT BY LEVEL <= LENGTH(S);
 
 
 --* BASICS STEPs PAttern [ - ve CUT Right DESC ]
@@ -2428,7 +2435,8 @@ SELECT RPAD(' ', LENGTH(S) + 1 - LEVEL) || SUBSTR(S, 1, LEVEL)                  
        RPAD(' ', LENGTH(S) + 1 - LEVEL) || SUBSTR(S, -LEVEL, LEVEL)                A2,
        RPAD(' ', LENGTH(S) + 1 - LEVEL) || SUBSTR(S, LENGTH(S) + 1 - LEVEL, LEVEL) A3,
        RPAD(' ', LENGTH(S) + 1 - LEVEL) || RPAD(S, LEVEL)                          A4
-FROM CTE CONNECT BY LEVEL <= LENGTH(S);
+FROM CTE
+CONNECT BY LEVEL <= LENGTH(S);
 
 
 --*6 Triks to Form Diamond
@@ -2442,56 +2450,67 @@ SELECT SUBSTR(S, LEVEL, 1)                                          A,
        SUBSTR(S, LEVEL, LEVEL)                                      Y,
        RPAD(' ', LENGTH(S) + 1 - LEVEL, ' ') || SUBSTR(S, LEVEL)    Z
 FROM dual,
-     (SELECT 'WITCHER3' S FROM dual) CONNECT BY LEVEL <= LENGTH(s);
+     (SELECT 'WITCHER3' S FROM dual)
+CONNECT BY LEVEL <= LENGTH(s);
 
 --* Print the Diamond
 SELECT SUBSTR(S, LEVEL)                                            A1,
        RPAD(' ', LEVEL) || SUBSTR(S, LEVEL, LENGTH(S) + 1 - LEVEL) A2
 FROM dual,
-     (SELECT '***************' AS S FROM dual) CONNECT BY LEVEL <= LENGTH(S)
+     (SELECT '***************' AS S FROM dual)
+CONNECT BY LEVEL <= LENGTH(S)
 UNION ALL
 SELECT SUBSTR(S, LENGTH(S) + 1 - LEVEL, LEVEL)                      A1,
        RPAD(' ', LENGTH(S) + 1 - LEVEL) || SUBSTR(S, -LEVEL, LEVEL) A2
 FROM dual,
-     (SELECT '***************' S FROM dual) CONNECT BY LEVEL <= LENGTH(S);
+     (SELECT '***************' S FROM dual)
+CONNECT BY LEVEL <= LENGTH(S);
 
 --*Print Psychedelic / Kite pattern
 SELECT SUBSTR(S, LEVEL, LENGTH(S) + 1 - LEVEL) || RPAD(' ', LEVEL) || SUBSTR(S, 1, LEVEL) AS A1
 FROM dual,
-     (SELECT 'ÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔ' S FROM dual) CONNECT BY LEVEL <= LENGTH(S)
+     (SELECT 'ÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔ' S FROM dual)
+CONNECT BY LEVEL <= LENGTH(S)
 UNION ALL
 SELECT RPAD(' ', LEVEL) || RPAD(S, LENGTH(S) + 1 - LEVEL) || RPAD(' ', LENGTH(S) + 1 - LEVEL) ||
        SUBSTR(S, -LEVEL, LEVEL) AS A1
 FROM dual,
-     (SELECT 'ÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔ' S FROM dual) CONNECT BY LEVEL <= LENGTH(S);
+     (SELECT 'ÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔ' S FROM dual)
+CONNECT BY LEVEL <= LENGTH(S);
 
 
 --*Display Pyramid
 SELECT RPAD(' ', LENGTH(S) + 1 - LEVEL) || SUBSTR(S, 1, LEVEL) || SUBSTR(S, -LEVEL, LEVEL) A1
 FROM dual,
-     (SELECT 'ÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔ' S FROM dual) CONNECT BY LEVEL <= LENGTH(S)
+     (SELECT 'ÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔ' S FROM dual)
+CONNECT BY LEVEL <= LENGTH(S)
 UNION ALL
 SELECT RPAD(' ', LEVEL) || SUBSTR(S, 1, LENGTH(S) + 1 - LEVEL) || RPAD(S, LENGTH(S) + 1 - LEVEL)
 FROM dual,
-     (SELECT 'ÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔ' S FROM dual) CONNECT BY LEVEL <= LENGTH(S);
+     (SELECT 'ÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔÔ' S FROM dual)
+CONNECT BY LEVEL <= LENGTH(S);
 
 --*Print V
 SELECT RPAD(' ', LEVEL) || '*' || RPAD(' ', 5 + 1 - LEVEL) || RPAD(' ', 5 + 1 - LEVEL) || '*' AS A
-FROM dual CONNECT BY LEVEL <= 6;
+FROM dual
+CONNECT BY LEVEL <= 6;
 
 
 --* Print X
 SELECT RPAD(' ', LEVEL) || '*' || RPAD(' ', 5 + 1 - LEVEL) || RPAD(' ', 5 + 1 - LEVEL) || '*' AS A
-FROM dual CONNECT BY LEVEL <= 6
+FROM dual
+CONNECT BY LEVEL <= 6
 UNION ALL
 SELECT RPAD(' ', 5 + 1 - LEVEL) || '*' || RPAD(' ', LEVEL) || RPAD(' ', LEVEL) || '*' AS A
-FROM dual CONNECT BY LEVEL <= 6;
+FROM dual
+CONNECT BY LEVEL <= 6;
 
 
 --* Print Aero Train.
 SELECT RPAD('*', ABS(10 - MOD(LEVEL, 10)), '*') || RPAD(' ', MOD(LEVEL, 10), ' ') ||
        RPAD(' ', MOD(LEVEL, 10), ' ') || RPAD('*', 10 - MOD(LEVEL, 10), '*') AS A
-FROM dual CONNECT BY LEVEl <= 100;
+FROM dual
+CONNECT BY LEVEl <= 100;
 
 
 ---*Display number after Decimal.
@@ -2503,11 +2522,12 @@ FROM CTE;
 
 
 --* Using ROW_NUMBER
-SELECT  L,rn,RPAD('* ',rn *3,'* ')||RPAD('*    ',L*2,'* ')
+SELECT L, rn, RPAD('* ', rn * 3, '* ') || RPAD('*    ', L * 2, '* ')
 FROM (
-         SELECT LEVEL L,ROW_NUMBER() OVER( ORDER BY null )As rn FROM dual
-         CONNECT BY LEVEL <=10
-         ORDER BY L DESC );
+         SELECT LEVEL L, ROW_NUMBER() OVER ( ORDER BY null ) As rn
+         FROM dual
+         CONNECT BY LEVEL <= 10
+         ORDER BY L DESC);
 
 
 --<|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|>--
@@ -2517,42 +2537,46 @@ FROM (
 --*Step 1
 SELECT SUBSTR(S, ROWNUM, 1)
 FROM dual,
-     (SELECT 'WITCHER3' AS S FROM dual) CONNECT BY LEVEL <= LENGTH(S);
+     (SELECT 'WITCHER3' AS S FROM dual)
+CONNECT BY LEVEL <= LENGTH(S);
 
 --*-- OR
 WITH CTE AS (SELECT 'WITCHER' D FROM dual)
 SELECT D
-FROM CTE CONNECT BY LEVEL <= LENGTH(D);
+FROM CTE
+CONNECT BY LEVEL <= LENGTH(D);
 
 
 --*Step 2 : Extract the character FROM the String
 SELECT SUBSTR(S, ROWNUM * -1, 1)
 FROM dual,
-     (SELECT 'WITCHER3' S FROm dual) CONNECT BY LEVEL <= LENGTH(S);
+     (SELECT 'WITCHER3' S FROm dual)
+CONNECT BY LEVEL <= LENGTH(S);
 
 --*-- OR
 WITH CTE AS (SELECT 'WITCHER3' D FROM dual)
 SELECT SUBSTR(D, LEVEL), SUBSTR(D, LEVEL, 1), LEVEL
-FROM CTE CONNECT BY LEVEL <= LENGTH(D);
+FROM CTE
+CONNECT BY LEVEL <= LENGTH(D);
 
 --* STEP 3
 WITH CTE AS (SELECT 'WITCHER3' D FROM dual)
 SELECT LISTAGG(S) WITHIN GROUP (ORDER BY L),
        LISTAGG(S) WITHIN
-GROUP (ORDER BY L DESC)
+           GROUP (ORDER BY L DESC)
 FROM (
-    SELECT SUBSTR(D, LEVEL, 1) S, LEVEL L
-    FROM CTE
-    CONNECT BY LEVEL <= LENGTH (D));
+         SELECT SUBSTR(D, LEVEL, 1) S, LEVEL L
+         FROM CTE
+         CONNECT BY LEVEL <= LENGTH(D));
 
 --*W/o With CLAUSE
 SELECT LISTAGG(S) WITHIN GROUP (ORDER BY L),
        LISTAGG(S) WITHIN
-GROUP (ORDER BY L DESC)
+           GROUP (ORDER BY L DESC)
 FROM (SELECT SUBSTR(D, LEVEL, 1) S, LEVEL L
-    FROM dual,
-    (SELECT 'WITCHER3' D FROM dual)
-    CONNECT BY LEVEL <= LENGTH (D));
+      FROM dual,
+           (SELECT 'WITCHER3' D FROM dual)
+      CONNECT BY LEVEL <= LENGTH(D));
 
 
 --<|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|>--
@@ -2570,12 +2594,16 @@ ORDER BY cd;
 
 SELECT dt,
        cd,
-       ROW_NUMBER() OVER (ORDER BY dt)                                                   AS X, ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt)                                   AS Y, ROW_NUMBER() OVER (ORDER BY dt) - ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt) AS Z
+       ROW_NUMBER() OVER (ORDER BY dt)                                                   AS X,
+       ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt)                                   AS Y,
+       ROW_NUMBER() OVER (ORDER BY dt) - ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt) AS Z
 FROM T;
 
 --* next Step
 SELECT DISTINCT cd,
-                ROW_NUMBER() OVER (ORDER BY dt)                                                   AS X, ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt)                                   AS Y, ROW_NUMBER() OVER (ORDER BY dt) - ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt) AS Z
+                ROW_NUMBER() OVER (ORDER BY dt)                                                   AS X,
+                ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt)                                   AS Y,
+                ROW_NUMBER() OVER (ORDER BY dt) - ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt) AS Z
 FROM T;
 
 
@@ -2593,7 +2621,8 @@ ORDER BY cd;
 SELECT cd, COUNT(cd), rx
 FROM (SELECT DISTINCT cd,
                       ROW_NUMBER() OVER (ORDER BY dt)
-                          - ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt) AS RN, COUNT(*) OVER (PARTITION BY cd)                       AS RX
+                          - ROW_NUMBER() OVER (PARTITION BY cd ORDER BY dt) AS RN,
+                      COUNT(*) OVER (PARTITION BY cd)                       AS RX
       FROM T)
 GROUP BY cd, rx
 ORDER BY cd;
@@ -2749,16 +2778,16 @@ WHERE salary >
                   AND ROWNUM <= (SELECT COUNT(*) / 2
                                  FROM employees
                                  WHERE employee_id = ANY (SELECT manager_id FROM employees))
-                    MINUS
+                MINUS
                 SELECT salary
                 FROM employees
                 WHERE employee_id = ANY (SELECT manager_id FROM employees)
-                  AND ROWNUM <> (SELECT COUNT (*) / 2
-                    FROM employees
-                    WHERE employee_id = ANY (SELECT manager_id FROM employees))
+                  AND ROWNUM <> (SELECT COUNT(*) / 2
+                                 FROM employees
+                                 WHERE employee_id = ANY (SELECT manager_id FROM employees))
             )
       )
-    MINUS
+MINUS
 SELECT *
 FROM employees
 WHERE employee_id = ANY (SELECT manager_id FROM employees);
@@ -2771,7 +2800,7 @@ WHERE ROWNUM <= (SELECT CASE MOD(COUNT(1), 2)
                             WHEN 0 THEN (COUNT(1) / 2) + 1
                             ELSE ROUND(COUNT(1) / 2) END
                  FROM employeex)
-    MINUS
+MINUS
 SELECT *
 FROM employeex
 WHERE ROWNUM < (SELECT (COUNT(1) / 2) FROM employeex);
@@ -2788,7 +2817,7 @@ WHERE ROWNUM <= (SELECT CASE MOD(COUNT(1), 2)
                             WHEN 0 THEN (COUNT(1) / 2) + 1
                             ELSE ROUND(COUNT(1) / 2) END
                  FROM CTE)
-    MINUS
+MINUS
 SELECT *
 FROM CTE
 WHERE ROWNUM < (SELECT (COUNT(1) / 2) FROM CTE)
@@ -2796,7 +2825,8 @@ WHERE ROWNUM < (SELECT (COUNT(1) / 2) FROM CTE)
 
 ---* SHOW next records after dividing the table
 SELECT *
-FROM employeex MINUS
+FROM employeex
+MINUS
 SELECT *
 FROM employeex
 WHERE ROWNUM <= (SELECT CASE MOD(COUNT(*), 2)
@@ -2823,21 +2853,23 @@ FROM (
                                   FROM (SELECT department_id, MAX(salary)
                                         FROM employees
                                         GROUP BY department_id
-                                        ORDER BY department_id) MINUS SELECT *
+                                        ORDER BY department_id)
+                                  MINUS
+                                  SELECT *
                                   FROM (WITH CTE AS
-                                      (SELECT department_id, MAX (salary)
-                                      FROM employees
-                                      GROUP BY department_id
-                                      ORDER BY department_id)
-                                      SELECT *
-                                      FROM CTE
+                                                 (SELECT department_id, MAX(salary)
+                                                  FROM employees
+                                                  GROUP BY department_id
+                                                  ORDER BY department_id)
+                                        SELECT *
+                                        FROM CTE
 --WHERE ROWNUM <= (SELECT COUNT(*)/2 FROM CTE )) ;
 
-                                      WHERE ROWNUM <= (SELECT CASE MOD(COUNT (1), 2)
-                                      WHEN 0 THEN (COUNT (1) / 2)
-                                      ELSE COUNT (1) / 2
-                                      END
-                                      FROM CTE))
+                                        WHERE ROWNUM <= (SELECT CASE MOD(COUNT(1), 2)
+                                                                    WHEN 0 THEN (COUNT(1) / 2)
+                                                                    ELSE COUNT(1) / 2
+                                                                    END
+                                                         FROM CTE))
                               ))
                      OR department_id IS NULL
                   ORDER BY department_id)
@@ -2859,7 +2891,7 @@ WHERE ROWNUM <= (SELECT CASE MOD(COUNT(ROWNUM / 2), 2)
                             ELSE FLOOR((COUNT(ROWNUM) * 75) / 100) + 1
                             END
                  FROM CTE)
-    MINUS
+MINUS
 
 SELECT *
 FROM CTE
@@ -2873,7 +2905,8 @@ WHERE ROWNUM <= (SELECT COUNT(ROWNUM) / 2 FROM CTE)
 82--* Count the number of Vowels in a String.
 ---* displaying 107 Rows WHY ...?
 SELECT LENGTH(first_name)
-FROM employees CONNECT BY LEVEL <= 1;
+FROM employees
+CONNECT BY LEVEL <= 1;
 
 
 --* using REGEXP_COUNT()
@@ -2895,7 +2928,8 @@ WITH CTE AS (
     WHERE employee_id = 100)
 SELECT e_name, A, COUNT(*)
 FROM (SELECT e_name, length, SUBSTR(e_name, LEVEL, 1) A
-      FROM CTE CONNECT BY LEVEL <= length)
+      FROM CTE
+      CONNECT BY LEVEL <= length)
 WHERE A IN ('A', 'E', 'I', 'O', 'U')
 GROUP BY e_name, A;
 
@@ -2908,14 +2942,15 @@ WITH CTE AS
           WHERE employee_id = 200)
 SELECT *
 FROM (
-         SELECT e_name,
-                vow,
-                COUNT(*) cnt
-         FROM (SELECT e_name, length, SUBSTR(e_name, LEVEL, 1) vow
-               FROM CTE CONNECT BY LEVEL <= length
-              )
-         WHERE vow IN ('A', 'E', 'I', 'O', 'U')
-         GROUP BY e_name, vow) PIVOT (MAX(cnt) FOR vow IN ('A','E','I','O','U'));
+    SELECT e_name,
+           vow,
+           COUNT(*) cnt
+    FROM (SELECT e_name, length, SUBSTR(e_name, LEVEL, 1) vow
+          FROM CTE
+          CONNECT BY LEVEL <= length
+         )
+    WHERE vow IN ('A', 'E', 'I', 'O', 'U')
+    GROUP BY e_name, vow) PIVOT (MAX(cnt) FOR vow IN ('A','E','I','O','U'));
 
 
 --* COUNT 'A' , 'T' FROM 'DATTATRAY'.
@@ -2924,7 +2959,8 @@ WITH CTE AS
 SELECT ext, S, COUNT(*)
 FROM (
          SELECT SUBSTR(S, LEVEL, 1) ext, S
-         FROM CTE CONNECT BY LEVEL <= LENGTH(S)
+         FROM CTE
+         CONNECT BY LEVEL <= LENGTH(S)
      )
 WHERE ext IN ('A', 'T')
 GROUP BY ext, S;
@@ -2935,13 +2971,14 @@ WITH CTE AS
              (SELECT 'DATTATRAY' S FROM dual)
 SELECT *
 FROM (
-         SELECT ext, S, COUNT(*) cnt
-         FROM (
-                  SELECT SUBSTR(S, LEVEL, 1) ext, S
-                  FROM CTE CONNECT BY LEVEL <= LENGTH(S)
-              )
-         WHERE ext IN ('A', 'T')
-         GROUP BY ext, S) PIVOT (MAX(cnt) FOR ext IN ('A','T'));
+    SELECT ext, S, COUNT(*) cnt
+    FROM (
+             SELECT SUBSTR(S, LEVEL, 1) ext, S
+             FROM CTE
+             CONNECT BY LEVEL <= LENGTH(S)
+         )
+    WHERE ext IN ('A', 'T')
+    GROUP BY ext, S) PIVOT (MAX(cnt) FOR ext IN ('A','T'));
 
 
 --* Master Method :
@@ -3035,7 +3072,8 @@ WHERE NOT EXISTS(SELECT 1
 
 --* w/o using NOT
 SELECT *
-FROM TT1 MINUS
+FROM TT1
+MINUS
 SELECT*
 FROM TT2;
 
@@ -3120,7 +3158,9 @@ FROM emp1;
 WITH CTE AS
          (SELECT empno,
                  ename,
-                 ROW_NUMBER() OVER (ORDER BY empno)                               RN, COUNT(1) OVER ()                                                 C, ROUND(COUNT(1) OVER () / 2) - ROW_NUMBER() OVER (ORDER BY empno) C1
+                 ROW_NUMBER() OVER (ORDER BY empno)                               RN,
+                 COUNT(1) OVER ()                                                 C,
+                 ROUND(COUNT(1) OVER () / 2) - ROW_NUMBER() OVER (ORDER BY empno) C1
           FROM emp1),
      CTE1 AS (SELECT empno, ename, C1 FROM CTE WHERE C1 >= 0),
      CTE2 AS (SELECT empno, ename, ABS(C1) C1 FROM CTE WHERE C1 < 0)
@@ -3138,7 +3178,8 @@ FROM CTE;
 
 87--*FETCH last 3 records W/o using ROWNUM / ROW_NUMBER().
 SELECT *
-FROM employeex OFFSET (SELECT COUNT(*) FROM employeex) - 3 ROW FETCH NEXT 3 ROWS ONLY;
+FROM employeex
+OFFSET (SELECT COUNT(*) FROM employeex) - 3 ROW FETCH NEXT 3 ROWS ONLY;
 
 
 --* ROWID [ co - related subquery method]
@@ -3210,22 +3251,26 @@ WHERE R = (SELECT ROUND(AVG(R)) FROM CTE);
 ---* :BOSS
 SELECT SYS_CONNECT_BY_PATH(emp_name, ' ===* ')
 FROM employeex
-START WITH manager_id IS NULL
+START
+WITH manager_id IS NULL
 CONNECT BY manager_id = PRIOR emp_id;
 
 
 ---* : any particular manager
 SELECT SYS_CONNECT_BY_PATH(emp_name, ' ===* ')
-FROM employeex START WITH emp_name = 'JONAS'
+FROM employeex
+START WITH emp_name = 'JONAS'
 CONNECT BY PRIOR emp_id = manager_id;
 
 SELECT salary, SYS_CONNECT_BY_PATH(emp_name, ' ===* ') X
-FROM employeex START WITH emp_name = 'JONAS'
+FROM employeex
+START WITH emp_name = 'JONAS'
 CONNECT BY PRIOR emp_id = manager_id;
 
 ---* Salary  OF manager Group:
 SELECT SUM(salary)
-FROM employeex START WITH emp_name = 'JONAS'
+FROM employeex
+START WITH emp_name = 'JONAS'
 CONNECT BY PRIOR emp_id = manager_id;
 
 ---* Salary  OF manager Group: ===* of every manager
@@ -3233,9 +3278,9 @@ SELECT emp_id,
        emp_name,
        salary,
        (SELECT SUM(salary)
-        FROM employeex START
-WITH emp_name = A.emp_name
-CONNECT BY PRIOR emp_id = manager_id) group_sal
+        FROM employeex
+        START WITH emp_name = A.emp_name
+        CONNECT BY PRIOR emp_id = manager_id) group_sal
 FROM employeex A;
 
 
@@ -3260,7 +3305,8 @@ FROM (
                 SUBSTR(S2, LEVEL, 1)        C2,
                 ASCII(SUBSTR(S1, LEVEL, 1)) A1,
                 ASCII(SUBSTR(S2, LEVEL, 1)) A2
-         FROM CTE CONNECT BY LEVEL <= LENGTH(S1))
+         FROM CTE
+         CONNECT BY LEVEL <= LENGTH(S1))
 GROUP BY S1, S2;
 
 
@@ -3277,7 +3323,8 @@ FROM (
                 ASCII(SUBSTR(S1, LEVEL, 1)) A2,
                 S1,
                 S2
-         FROM CTE CONNECT BY LEVEL <= LENGTH(S1))
+         FROM CTE
+         CONNECT BY LEVEL <= LENGTH(S1))
 GROUP BY S1, S2;
 
 
@@ -3290,17 +3337,17 @@ WITH CTE AS (SELECT ROWNUM R, C1 FROM TX)
 SELECT R, L, C1 ---* w/o lateral ------* this C1 will not work
 FROM CTE, LATERAL (SELECT LEVEL L
                    FROM dual
-CONNECT BY LEVEL <= LENGTH (C1))
+                   CONNECT BY LEVEL <= LENGTH(C1))
 
 --* STEP 2:
 WITH CTE AS (SELECT ROWNUM R, C1 FROM TX)
 SELECT R,
-       LISTAGG(SUBSTR(C1, L, 1), '') WITHIN GROUP ( ORDER BY L )               A,
+       LISTAGG(SUBSTR(C1, L, 1), '') WITHIN GROUP ( ORDER BY L ) A,
        LISTAGG(SUBSTR(C1, L, 1), '') WITHIN
-GROUP (ORDER BY SUBSTR(C1, L, 1) ) B
+           GROUP (ORDER BY SUBSTR(C1, L, 1) )                    B
 FROM CTE, LATERAL (SELECT LEVEL L
-    FROM dual
-    CONNECT BY LEVEL <= LENGTH (C1) )
+                   FROM dual
+                   CONNECT BY LEVEL <= LENGTH(C1) )
 GROUP BY R
 ORDER BY R;
 
@@ -3360,8 +3407,9 @@ ORDER BY 1;
 
 --* master method 2:
 SELECT C1
-FROM x, LATERAL (SELECT 1 FROM dual
-CONNECT BY LEVEL <= 2);
+FROM x, LATERAL (SELECT 1
+                 FROM dual
+                 CONNECT BY LEVEL <= 2);
 --OR
 SELECT C1
 FROM x,
@@ -3428,27 +3476,27 @@ GROUP BY 'G' || CEIL(ROWNUM / 3);
 --* Final Step A:
 SELECT column_name, col_val AS col_sum
 FROM (
-         SELECT SUM(C1) c1,
-                SUM(C2) c2,
-                SUM(C3) c3,
-                SUM(C4) c4,
-                SUM(C5) c5,
-                SUM(C6) c6,
-                SUM(C7) c7,
-                SUM(C8) c8,
-                SUM(C9) c9
-         FROM SUDOKU) UNPIVOT (Col_val FOR column_name IN (c1,c2,c3,c4,c5,c6,c7,c8,c9));
+    SELECT SUM(C1) c1,
+           SUM(C2) c2,
+           SUM(C3) c3,
+           SUM(C4) c4,
+           SUM(C5) c5,
+           SUM(C6) c6,
+           SUM(C7) c7,
+           SUM(C8) c8,
+           SUM(C9) c9
+    FROM SUDOKU) UNPIVOT (Col_val FOR column_name IN (c1,c2,c3,c4,c5,c6,c7,c8,c9));
 
 
 --* Final Step B:
 SELECT column_name, column_val
 FROM (
-         SELECT 'G' || CEIL(ROWNUM / 3)
-              , SUM(C1 + C2 + C3) G1
-              , SUM(C4 + C5 + C6) G2
-              , SUM(C7 + C8 + C9) G3
-         FROM SUDOKU
-         GROUP BY 'G' || CEIL(ROWNUM / 3)) UNPIVOT (column_val FOR column_name IN (G1,G2,G3));
+    SELECT 'G' || CEIL(ROWNUM / 3)
+         , SUM(C1 + C2 + C3) G1
+         , SUM(C4 + C5 + C6) G2
+         , SUM(C7 + C8 + C9) G3
+    FROM SUDOKU
+    GROUP BY 'G' || CEIL(ROWNUM / 3)) UNPIVOT (column_val FOR column_name IN (G1,G2,G3));
 
 ---* Grand FINAL step :
 SELECT CASE
@@ -3458,28 +3506,28 @@ SELECT CASE
 FROM (
          SELECT column_name, col_val AS col_sum
          FROM (
-                  SELECT SUM(C1) c1,
-                         SUM(C2) c2,
-                         SUM(C3) c3,
-                         SUM(C4) c4,
-                         SUM(C5) c5,
-                         SUM(C6) c6,
-                         SUM(C7) c7,
-                         SUM(C8) c8,
-                         SUM(C9) c9
-                  FROM SUDOKU) UNPIVOT (Col_val FOR column_name IN (c1,c2,c3,c4,c5,c6,c7,c8,c9))
+             SELECT SUM(C1) c1,
+                    SUM(C2) c2,
+                    SUM(C3) c3,
+                    SUM(C4) c4,
+                    SUM(C5) c5,
+                    SUM(C6) c6,
+                    SUM(C7) c7,
+                    SUM(C8) c8,
+                    SUM(C9) c9
+             FROM SUDOKU) UNPIVOT (Col_val FOR column_name IN (c1,c2,c3,c4,c5,c6,c7,c8,c9))
          UNION ALL
          SELECT ROW_NUM, C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 Row_sum
          FROM SUDOKU
          UNION ALL
          SELECT column_name, column_val
          FROM (
-                  SELECT 'G' || CEIL(ROWNUM / 3)
-                       , SUM(C1 + C2 + C3) G1
-                       , SUM(C4 + C5 + C6) G2
-                       , SUM(C7 + C8 + C9) G3
-                  FROM SUDOKU
-                  GROUP BY 'G' || CEIL(ROWNUM / 3)) UNPIVOT (column_val FOR column_name IN (G1,G2,G3)));
+             SELECT 'G' || CEIL(ROWNUM / 3)
+                  , SUM(C1 + C2 + C3) G1
+                  , SUM(C4 + C5 + C6) G2
+                  , SUM(C7 + C8 + C9) G3
+             FROM SUDOKU
+             GROUP BY 'G' || CEIL(ROWNUM / 3)) UNPIVOT (column_val FOR column_name IN (G1,G2,G3)));
 
 
 --<|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|>--
@@ -3508,7 +3556,7 @@ P2      |   PROD -P2    | C,B,D       |    3  |   D    | SERVICE- D   |
 SELECT product_code, product_desc, service_order, L
 FROM product_service, LATERAL (SELECT LEVEL L
                                FROM dual
-CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1);
+                               CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1);
 
 --*STEP 2: But see this
 ˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜
@@ -3525,7 +3573,7 @@ FROM product_service;
 SELECT SUBSTR(service_order, INSTR(service_order, ',', 1, L) - 1, 1) occ, service_order, product_code
 FROM product_service, LATERAL (SELECT LEVEL L
                                FROM dual
-CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1);
+                               CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1);
 
 ˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜
 
@@ -3539,7 +3587,7 @@ SELECT product_code,
        REGEXP_SUBSTR(service_order, '(.*?,){' || (L - 1) || '}([^,]*)', 1, 1, '', 2) AS A
 FROM product_service, LATERAL (SELECT LEVEL L
                                FROM dual
-CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1);
+                               CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1);
 
 
 --* STEP 3: Joining
@@ -3551,8 +3599,9 @@ SELECT product_code,
        service.service_name
 FROM product_service,
      service,
-    LATERAL (SELECT LEVEL L FROM dual
-CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1 )
+    LATERAL (SELECT LEVEL L
+             FROM dual
+             CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1 )
 WHERE service.service_code = REGEXP_SUBSTR(service_order, '(.*?,){' || (L - 1) || '}([^,]*)', 1, 1, '', 2)
 ORDER BY product_code, product_desc, service_order, L;
 
@@ -3563,7 +3612,7 @@ SELECT product_code,
        service_order,
        LISTAGG(service.service_name, ',') WITHIN GROUP (ORDER BY L) AS service_names
 FROM product_service,
-    service,
+     service,
     LATERAL (SELECT LEVEL L FROM dual CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1)
 WHERE service.service_code = REGEXP_SUBSTR(service_order, '(.*?,){' || (L - 1) || '}([^,]*)', 1, 1, '', 2)
 GROUP BY product_code, product_desc, service_order
@@ -3576,12 +3625,12 @@ SELECT DISTINCT product_code,
                 service_order,
                 LISTAGG(service_name, ',') WITHIN GROUP (ORDER BY L) OVER (PARTITION BY product_code) service_order_new
 FROM (
-    SELECT service_name, service_order, L, product_code, product_desc
-    FROM product_service,
-    service, LATERAL (SELECT LEVEL L
-    FROM dual
-    CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1)
-    WHERE service.service_code = SUBSTR(service_order, INSTR(service_order, ',', 1, L) - 1, 1))
+         SELECT service_name, service_order, L, product_code, product_desc
+         FROM product_service,
+              service, LATERAL (SELECT LEVEL L
+                                FROM dual
+                                CONNECT BY LEVEL <= REGEXP_COUNT(service_order, ',') + 1)
+         WHERE service.service_code = SUBSTR(service_order, INSTR(service_order, ',', 1, L) - 1, 1))
 ORDER BY product_code;
 
 
@@ -3640,7 +3689,8 @@ FROM employees;
 
 --* master method 4:
 SELECT first_name
-FROM employees MINUS
+FROM employees
+MINUS
 SELECT NULL
 FROM dual;
 
@@ -3701,15 +3751,15 @@ FROM CTE;
 WITH CTE AS (SELECT 'BLUEBERRY' S FROM dual)
 SELECT *
 FROM (
-         SELECT SUBSTR(S, L, 1)                  C,
+         SELECT SUBSTR(S, L, 1)                                             C,
                 L,
-                REGEXP_COUNT(S, SUBSTR(S, L, 1)) cnt,
-                ROW_NUMBER()                     OVER (PARTITION BY SUBSTR(S, L, 1) ORDER BY L) Occ
+                REGEXP_COUNT(S, SUBSTR(S, L, 1))                            cnt,
+                ROW_NUMBER() OVER (PARTITION BY SUBSTR(S, L, 1) ORDER BY L) Occ
          FROM CTE, LATERAL (SELECT LEVEL L
                             FROM dual
-         CONNECT BY LEVEL <= LENGTH (S))
-WHERE REGEXP_COUNT(S, SUBSTR(S, L, 1)) = 2 --* Filter to group multiple character
-    )
+                            CONNECT BY LEVEL <= LENGTH(S))
+         WHERE REGEXP_COUNT(S, SUBSTR(S, L, 1)) = 2 --* Filter to group multiple character
+     )
 WHERE occ = 2
 ORDER BY L --FETCH FIRST ROW ONLY
 ;
@@ -3759,9 +3809,9 @@ WHERE REGEXP_LIKE(A.c1, '^[[:digit:]]$')
 --* IMLERITH method: part-1 :
 SELECT LISTAGG(c1, ',') WITHIN GROUP (ORDER BY c1) A,
        LISTAGG(C2, ',') WITHIN
-GROUP (ORDER BY c2) B,
-    LISTAGG(c3, ',') WITHIN
-GROUP (ORDER BY c3) B ---* multiple same columns
+           GROUP (ORDER BY c2)                     B,
+       LISTAGG(c3, ',') WITHIN
+           GROUP (ORDER BY c3)                     B ---* multiple same columns
 FROM null1 ---* but 'column ambiguously' ERROR with WITH  clause
 GROUP BY NULL;
 
@@ -3769,60 +3819,60 @@ GROUP BY NULL;
 --* IMLERITH method: part-2 :
 WITH CTE AS (
     SELECT LISTAGG(c1, ',') WITHIN
-GROUP (ORDER BY c1) A,
-    LISTAGG(C2, ',') WITHIN
-GROUP (ORDER BY c2) B,
-    LISTAGG(c3, ',') WITHIN
-GROUP (ORDER BY c3) C
-FROM null1
-GROUP BY NULL)
+        GROUP (ORDER BY c1)        A,
+           LISTAGG(C2, ',') WITHIN
+               GROUP (ORDER BY c2) B,
+           LISTAGG(c3, ',') WITHIN
+               GROUP (ORDER BY c3) C
+    FROM null1
+    GROUP BY NULL)
 SELECT A, B, C
 FROM CTE, LATERAL ( SELECT LEVEL L
                     FROM dual
-CONNECT BY LEVEL <= LENGTH (REPLACE(A, ',', '')));
+                    CONNECT BY LEVEL <= LENGTH(REPLACE(A, ',', '')));
 
 
 --* IMLERITH master Step / Final STEP : (Using regexp)
 WITH CTE AS (
     SELECT LISTAGG(c1, ',') WITHIN
-GROUP ( ORDER BY c1) A,
-    LISTAGG(c2, ',') WITHIN
-GROUP (ORDER BY c2) B,
-    LISTAGG(c3, ',') WITHIN
-GROUP (ORDER BY c3) C
-FROM null1
-GROUP BY NULL)
+        GROUP ( ORDER BY c1)       A,
+           LISTAGG(c2, ',') WITHIN
+               GROUP (ORDER BY c2) B,
+           LISTAGG(c3, ',') WITHIN
+               GROUP (ORDER BY c3) C
+    FROM null1
+    GROUP BY NULL)
 SELECT REGEXP_SUBSTR(A, '(.*?,){' || (L - 1) || '}([^,]*)', 1, 1, '', 2) A,
        REGEXP_SUBSTR(B, '(.*?,){' || (L - 1) || '}([^,]*)', 1, 1, '', 2) B,
        REGEXP_SUBSTR(C, '(.*?,){' || (L - 1) || '}([^,]*)', 1, 1, '', 2) C
 FROM CTE, LATERAL (SELECT LEVEL L
                    FROM dual
-CONNECT BY LEVEL <= REGEXP_COUNT(A, ',') + 1 );
+                   CONNECT BY LEVEL <= REGEXP_COUNT(A, ',') + 1 );
 
 
 ---* IMLERITH's Another method : (using substr / instr)
 WITH CTE AS (
     SELECT LISTAGG(c1, ',') WITHIN
-GROUP (ORDER BY c1) A,
-    LISTAGG(c1, ',') WITHIN
-GROUP (ORDER BY c2) B,
-    LISTAGG(c3, ',') WITHIN
-GROUP (ORDER BY c3) C
-FROM null1
-GROUP BY NULL)
+        GROUP (ORDER BY c1)        A,
+           LISTAGG(c1, ',') WITHIN
+               GROUP (ORDER BY c2) B,
+           LISTAGG(c3, ',') WITHIN
+               GROUP (ORDER BY c3) C
+    FROM null1
+    GROUP BY NULL)
 SELECT SUBSTR(A, INSTR(A, ',', 1, L) - 1, 1)                                       A,---* FOR single string
        SUBSTR(B, INSTR(B, ',', 1, L) - 1, 1)                                       B,
        SUBSTR(C, INSTR(C, ',', 1, L) - 2, LENGTH(C) - LENGTH(REPLACE(C, ',', ''))) C ---* FOR double string
 FROM CTE, LATERAL (SELECT LEVEL L
                    FROM dual
-CONNECT BY LEVEL <= LENGTH (REPLACE(A
-         , ','
-         , ''))
+                   CONNECT BY LEVEL <= LENGTH(REPLACE(A, ',', ''))
     );
 
 
 
-˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜*** Duplication Methods ***˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜
+˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜
+__***_*** Duplication Methods ***_***__
+˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜˜
 --* Check_constraints
 SELECT *
 FROM USER_CONSTRAINTS
@@ -3935,10 +3985,8 @@ FROM employees A,
      employees C
 WHERE A.manager_id = B.employee_id WHERE A.manager_id = B.employee_id
   AND B.manager_id = C.employee_id;
-1
-1
-1
-1
-1
-1
-1
+
+
+--<|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|>--
+-<[DELTA 200]-< d e l t a - 2 0 0 >-< You are a developer now >-
+--<|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|/|\|/|\/|\|/|\|/|\|>--
