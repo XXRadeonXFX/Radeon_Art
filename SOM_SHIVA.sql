@@ -3935,3 +3935,10 @@ FROM employees A,
      employees C
 WHERE A.manager_id = B.employee_id WHERE A.manager_id = B.employee_id
   AND B.manager_id = C.employee_id;
+1
+1
+1
+1
+1
+1
+1
