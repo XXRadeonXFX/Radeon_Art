@@ -3238,6 +3238,23 @@ SELECT MOD(ROWNUM, 3),
 FROM T3;
 
 
+---* Diagonal date with any table ::
+SELECT CASE
+           WHEN RN = 1 THEN TO_CHAR(emp_id)
+           WHEN RN = 2 THEN emp_name
+           WHEN RN = 3 THEN job_name
+           WHEN RN = 4 THEN TO_CHAR(manager_id)
+           WHEN RN = 5 THEN TO_CHAR(hire_date)
+           WHEN RN = 6 THEN TO_CHAR(salary)
+           WHEN RN = 7 THEN TO_CHAR(commission)
+           WHEN RN = 8 THEN TO_CHAR(dep_id)
+           END
+FROM (
+         SELECT A.*, ROW_NUMBER() OVER (ORDER BY null) RN
+         FROM employeex A)
+WHERE RN <= (SELECT COUNT(column_name) FROM user_tab_columns WHERE table_name = 'EMPLOYEEX');
+
+
 89--*Return Mid column name, w/o using column name
 WITH CTE AS (
     SELECT ROWNUM R, column_name FROM USER_TAB_COLUMNS WHERE table_name = 'EMPLOYEEX'
@@ -3391,6 +3408,35 @@ FROM (
      FROM mix
      WHERE CAST(C1 AS NUMBER DEFAULT - 999 ON CONVERSION ERROR) <> -999) B
                          ON A.R = B.R;
+
+
+--* Tricky question using REGEXP_REPLACE :
+SELECT REGEXP_REPLACE(A, '[A-Za-z]') AS Numbers_A,
+       REGEXP_REPLACE(A, '[0-9]')    AS Letters_A,
+       A,
+       REGEXP_REPLACE(B, '[A-za-z]') AS Number_B,
+       REGEXP_REPLACE(B, '[0-9]')    AS LETTERS_B,
+       B
+FROM mix1;
+
+
+--*Full-version:
+SELECT*
+FROM mix1;
+WITH CTE AS (
+    SELECT REGEXP_REPLACE(A, '[A-Za-z]') AS C1,
+           REGEXP_REPLACE(A, '[0-9]')    AS C2,
+           REGEXP_REPLACE(B, '[A-za-z]') AS C3,
+           REGEXP_REPLACE(B, '[0-9]')    AS C4
+    FROM mix1)
+SELECT REGEXP_SUBSTR(alpha, '(.*?,){' || (L - 1) || '}([^,]*)', 1, 1, '', 2) A,
+       REGEXP_SUBSTR(beta, '(.*?,){' || (L - 1) || '}([^,]*)', 1, 1, '', 2)  B
+FROM (
+         SELECT LISTAGG(C1, ',') WITHIN GROUP (ORDER BY c1) alpha,
+                LISTAGG(C2, ',') WITHIN GROUP (ORDER BY c2) beta,
+                LISTAGG(c3, ',') WITHIN GROUP (ORDER BY c3) gamma,
+                LISTAGG(c4, ',') WITHIN GROUP (ORDER BY c4) lemda
+         FROM CTE), LATERAL (SELECT LEVEL L FROM dual CONNECT BY LEVEL <= REGEXP_COUNT(alpha, ',') + 1);
 
 
 94--* Additional question.
@@ -3866,6 +3912,50 @@ FROM CTE, LATERAL (SELECT LEVEL L
                    FROM dual
                    CONNECT BY LEVEL <= LENGTH(REPLACE(A, ',', ''))
     );
+
+
+-- * ALL the Null values At bottom.
+-- * Method 1:
+SELECT *
+FROM null1;
+WITH CTE AS (
+    SELECT c1, ROW_NUMBER() OVER (ORDER BY c1) R1
+    FROM null1),
+     CTE1 AS (SELECT c2, ROW_NUMBER() OVER (ORDER BY c2) R2 FROM null1),
+     CTE2 AS (SELECT C3, ROW_NUMBER() OVER (ORDER BY c3) R3 FROM null1)
+SELECT c1, c2, c3
+FROM CTE,
+     CTE1,
+     CTE2
+WHERE CTE.R1 = CTE1.R2
+  AND CTE1.R2 = CTE2.r3;
+
+
+-- * Alternative Method : w/o With Clause
+SELECT c1, c2, c3
+FROM (
+         SELECT CASE
+                    WHEN R <> ROWNUM THEN ROWNUM
+                    ELSE R END AS R1,
+                c1
+         FROM (
+                  SELECT ROWNUM R, c1
+                  FROM null1
+                  ORDER BY c1)) A
+         FULL OUTER JOIN
+     (SELECT CASE
+                 WHEN R <> ROWNUM THEN ROWNUM
+                 ELSE R END AS R2,
+             c2
+      FROM (SELECT ROWNUM R, c2 FROM null1 ORDER BY c2)) B
+     ON A.R1 = B.R2
+         FULL OUTER JOIN
+     (SELECT CASE
+                 WHEN R <> ROWNUM THEN ROWNUM
+                 ELSE R END AS R3,
+             c3
+      FROM (SELECT ROWNUM R, c3 FROM null1 ORDER BY c3)) C
+     ON B.R2 = C.R3;
 
 
 106--* Group by vs Having .[ order can be manipulated ] ****
@@ -4571,40 +4661,63 @@ WHERE EXISTS(SELECT 1 FROM customers WHERE A.city = city AND A.snum != snum);
 71X --* Write a query using ANY or ALL that will find all salespeople
 -- who have no customers located in their city
 SELECT sname, city
-FROM salespeople                                 ---* Ó cant't use all here as gives u blank table.
+FROM salespeople ---* Ó cant't use all here as gives u blank table.
 WHERE sname NOT IN (SELECT sname FROM salespeople WHERE city = ANY (SELECT city FROM customers));
-
 
 
 70X --*List the commissions of all salespeople servicing customers in London. -< Remove >-
 SELECT comm
 FROM salespeople
-WHERE snum IN ( SELECT snum FROM  customers WHERE city ='London');
+WHERE snum IN (SELECT snum FROM customers WHERE city = 'London');
 
 
 69X --*** Write a query that gives the names of both the salesperson
 -- and the customer for each order after the order number.
-SELECT onum,A.sname,B.cname
-FROM salespeople A,customers B , orders C
-WHERE A.snum= B.snum
-AND B.cnum=C.cnum ;
+SELECT onum, A.sname, B.cname
+FROM salespeople A,
+     customers B,
+     orders C
+WHERE A.snum = B.snum
+  AND B.cnum = C.cnum;
 
 --* alternative solution:
-SELECT onum ,odate,cname,sname
-FROM salespeople A,customers B ,orders C
+SELECT onum, odate, cname, sname
+FROM salespeople A,
+     customers B,
+     orders C
 WHERE A.snum = C.snum
-AND B.cnum =C.cnum;
-
+  AND B.cnum = C.cnum;
 
 
 68X --* Count the number of nonNULL rating fields in the Customers table
 -- (including repeats).
-SELECT COUNT ( rate)
+SELECT COUNT(rate)
 FROM customers;
 
 
 67X  --* Write a SELECT command that produces the order number, amount
--- and date for all rows in the order table.
+-- and date for all rows in the order table. -< Remove >-
+SELECT onum, amt, odate
+FROM orders;
+
+
+66X --* Find the SUM of all purchases from the Orders table  -< REMOVE >-
+SELECT SUM(amt)
+FROM orders;
+
+
+65X --* Write a query that produces the names and ratings of all customers of all who have above average orders.
+SELECT cname, rate
+FROM customers
+WHERE cnum IN (SELECT cnum
+               FROM orders
+               HAVING COUNT(onum) > (SELECT AVG(COUNT(onum)) FROM orders GROUP BY cnum)
+               GROUP BY cnum);
+
+--* doubt:
+select cname, rate
+from customers
+where rate > (select avg(rate) from customers);
 
 
 64X --*** Find all salespeople for whom there are customers that follow them in alphabetical order
@@ -4622,6 +4735,44 @@ FROM salespeople A,
 WHERE A.snum = B.snum
 HAVING A.sname < B.cname
 GROUP BY A.snum, A.sname, B.cname;
+
+63X --* Write a query that produces the names and cities of all customers with the same rating as Hoffman.
+-- Write the query using Hoffman's CNUM rather than his rating,
+-- so that it would still be usable if his rating changed.
+SELECT cname, city
+FROM customers
+WHERE rate = (SELECT rate FROM customers WHERE cnum = (SELECT cnum FROM customers WHERE cname = 'Hoffman'));
+
+
+SELECT cname, city
+FROM customers --* doubt Why snum..?
+WHERE rate IN (SELECT rate FROM customers WHERE snum = (SELECT snum FROM customers WHERE cname = 'Hoffman'));
+
+
+62X --*** List all Salespeople's names and the Commission they have earned.
+SELECT sname, SUM(comm * amt)
+FROM salespeople,
+     orders
+WHERE salespeople.snum = orders.snum
+GROUP BY sname;
+
+
+61X --*** Produce all combinations of salespeople and customer names such that the
+-- former precedes the latter alphabetically, and the latter has a rating of less than 200.
+SELECT sname, cname, rate
+FROM customers A,
+     salespeople B
+WHERE rate < 200
+HAVING cname > sname
+GROUP BY sname, cname, rate;
+
+--* (wrong )
+SELECT sname, cname, rate
+FROM customers A,
+     salespeople B
+HAVING cname > sname
+   AND rate < 200
+GROUP BY sname, cname, rate;
 
 
 59X --* Find the total amount in Orders for each salesperson for whom this
